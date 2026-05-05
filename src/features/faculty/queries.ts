@@ -37,11 +37,15 @@ export function useFacultyStats() {
   });
 }
 
-export function useSlots(params: ListSlotsParams = {}) {
+export function useSlots(
+  params: ListSlotsParams = {},
+  options: { enabled?: boolean } = {},
+) {
   return useQuery({
     queryKey: facultyKeys.slotsList(params),
     queryFn: () => facultyApi.listSlots(params),
     placeholderData: keepPreviousData,
+    enabled: options.enabled ?? true,
   });
 }
 

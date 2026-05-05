@@ -37,6 +37,7 @@ import { getErrorMessage } from "@/lib/api";
 import {
   useRegistrations,
   useSlotRegistrations,
+  useSlots,
 } from "../queries";
 import type {
   ListRegistrationsParams,
@@ -79,7 +80,13 @@ export function RegistrationsTable({ slotId, embedded }: RegistrationsTableProps
   const [search, setSearch] = useState("");
   const [approvedFrom, setApprovedFrom] = useState("");
   const [approvedUntil, setApprovedUntil] = useState("");
+  // "all" | "<slot id>" — only used when not embedded under a slot.
+  const [slotFilter, setSlotFilter] = useState<string>("all");
   const debouncedSearch = useDebouncedValue(search, 350);
+
+  // Populate the slot filter dropdown. Skip the request entirely on the
+  // slot-detail embed since the filter isn't shown there.
+  const slotsForFilter = useSlots({ per_page: 100 }, { enabled: !embedded && !slotId });
 
   const sharedParams: Omit<ListRegistrationsParams, "slot_id"> = {
     page,
@@ -90,8 +97,10 @@ export function RegistrationsTable({ slotId, embedded }: RegistrationsTableProps
     approved_until: status === "approved" && approvedUntil ? approvedUntil : undefined,
   };
 
+  const filteredSlotId = slotFilter === "all" ? undefined : Number(slotFilter);
+
   const slotQuery = useSlotRegistrations(slotId ?? 0, sharedParams);
-  const globalQuery = useRegistrations(sharedParams);
+  const globalQuery = useRegistrations({ ...sharedParams, slot_id: filteredSlotId });
   const { data, isLoading, isFetching, isError, error } = slotId ? slotQuery : globalQuery;
 
   const onFilterChange = () => {
@@ -103,7 +112,7 @@ export function RegistrationsTable({ slotId, embedded }: RegistrationsTableProps
   const [selected, setSelected] = useState<Set<number>>(new Set());
   useEffect(() => {
     setSelected(new Set());
-  }, [page, status, debouncedSearch, approvedFrom, approvedUntil]);
+  }, [page, status, debouncedSearch, approvedFrom, approvedUntil, slotFilter]);
 
   const rows = data?.data ?? [];
   const selectableIds = useMemo(
@@ -182,6 +191,33 @@ export function RegistrationsTable({ slotId, embedded }: RegistrationsTableProps
             ))}
           </SelectContent>
         </Select>
+        {!slotId && (
+          <Select
+            value={slotFilter}
+            onValueChange={(v) => {
+              setSlotFilter(v);
+              onFilterChange();
+            }}
+            disabled={slotsForFilter.isLoading}
+          >
+            <SelectTrigger className="w-full lg:w-[220px]">
+              <SelectValue placeholder="All slots" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All slots</SelectItem>
+              {slotsForFilter.data?.data.map((slot) => (
+                <SelectItem key={slot.id} value={String(slot.id)}>
+                  <span className="font-medium">{slot.name}</span>
+                  {slot.flipped_course?.name && (
+                    <span className="ml-2 text-muted-foreground">
+                      · {slot.flipped_course.name}
+                    </span>
+                  )}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         {status === "approved" && (
           <div className="flex items-center gap-2">
             <Input
