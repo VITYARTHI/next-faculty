@@ -1,0 +1,225 @@
+Faculty API — Frontend Integration Spec
+
+Branch: faculty-api · Base URL: {APP_URL}/api/v1 · Auth: Laravel Sanctum (Bearer token)
+
+---
+1. Authentication
+
+The Faculty API reuses the existing Sanctum login flow. There is no separate faculty login endpoint — any authenticated user whose account is linked to a flipped_course_faculty record can
+call faculty routes.
+
+Login
+
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+"email": "faculty@example.com",
+"password": "..."
+}
+
+Response includes a Sanctum token. Send it on every faculty request:
+
+Authorization: Bearer <token>
+Accept: application/json
+
+Auth errors specific to faculty endpoints
+
+┌────────┬──────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────┐
+│ Status │                                   Body                                   │                    When                     │
+├────────┼──────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────┤
+│    401 │ { "success": false, "message": "Unauthenticated." }                      │ Missing/invalid token                       │
+├────────┼──────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────┤
+│    403 │ { "success": false, "message": "Access denied. Faculty role required." } │ User is logged in but has no faculty record │
+└────────┴──────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────┘
+
+Detecting a faculty user
+
+After login, call GET /api/v1/auth/user. If the user has flipped_course_faculty (non-null), they can access faculty routes. Otherwise the frontend should hide the Faculty area.
+
+---
+2. Common Response Envelope
+
+All endpoints use the standard V1 envelope.
+
+Success (single resource):
+{ "success": true, "message": "...", "data": { ... } }
+
+Success (paginated list):
+{
+"success": true,
+"message": "...",
+"data": [ ... ],
+"meta":  { "current_page": 1, "last_page": 3, "per_page": 15, "total": 42, "from": 1, "to": 15 },
+"links": { "first": "...", "last": "...", "prev": null, "next": "..." }
+}
+
+Error:
+{ "success": false, "message": "...", "errors": { "field": ["..."] } }   // 422 only includes "errors"
+
+Common codes: 400, 401, 403, 404, 422 (validation).
+
+---
+3. Endpoints
+
+All routes are prefixed with /api/v1/faculty and require Authorization: Bearer <token> plus a faculty-linked user.
+
+3.1 List Slots
+
+GET /faculty/slots
+
+Query params (all optional):
+
+┌───────────┬─────────┬──────────────────────────┐
+│   Param   │  Type   │          Notes           │
+├───────────┼─────────┼──────────────────────────┤
+│ per_page  │ int     │ 1–100, default 15        │
+├───────────┼─────────┼──────────────────────────┤
+│ is_active │ boolean │ true / false             │
+├───────────┼─────────┼──────────────────────────┤
+│ search    │ string  │ matches slot name (LIKE) │
+└───────────┴─────────┴──────────────────────────┘
+
+Returns: paginated list of slots owned by the authenticated faculty. Each item includes:
+
+{
+"id": 12,
+"name": "Morning Batch A",
+"flipped_course_id": 4,
+"flipped_course_faculty_id": 7,
+"capacity": 60,
+"is_active": true,
+"registration_deadline": "2026-06-01T00:00:00.000000Z",
+"description": "...",
+"requested_count": 3,
+"approved_count": 42,
+"rejected_count": 1,
+"flipped_course": { "id": 4, "name": "DS-101", "course_id": 88 }
+}
+
+---
+3.2 Get a Slot
+
+GET /faculty/slots/{slot}
+
+{slot} is numeric. Returns the slot record + derived fields:
+
+{
+"id": 12,
+"name": "...",
+"capacity": 60,
+"requested_count": 3,
+"approved_count": 42,
+"rejected_count": 1,
+"available_capacity": 18,
+"capacity_status": "available",     // "available" | "limited" | "full"
+"is_registration_open": true,
+"flipped_course": { ... },
+"flipped_course_faculty": { ... }
+}
+
+404 if the slot does not belong to the authenticated faculty.
+
+---
+3.3 List Registrations for a Slot
+
+GET /faculty/slots/{slot}/registrations
+
+Convenience route — equivalent to GET /faculty/registrations?slot_id={slot}. Same query params as 3.4. 404 if slot isn't owned by the faculty.
+
+---
+3.4 List Registrations (across all faculty's slots)
+
+GET /faculty/registrations
+
+Query params:
+
+┌───────────────────┬────────┬───────────────────────────────────────────────────────────────────┐
+│       Param       │  Type  │                               Notes                               │
+├───────────────────┼────────┼───────────────────────────────────────────────────────────────────┤
+│ per_page          │ int    │ 1–100, default 15                                                 │
+├───────────────────┼────────┼───────────────────────────────────────────────────────────────────┤
+│ slot_id           │ int    │ filter to a specific slot (must belong to the faculty)            │
+├───────────────────┼────────┼───────────────────────────────────────────────────────────────────┤
+│ flipped_course_id │ int    │ filter by course                                                  │
+├───────────────────┼────────┼───────────────────────────────────────────────────────────────────┤
+│ status            │ string │ requested | approved | rejected | cancelled. Default: approved    │
+├───────────────────┼────────┼───────────────────────────────────────────────────────────────────┤
+│ search            │ string │ matches student first_name, last_name, email, registration_number │
+├───────────────────┼────────┼───────────────────────────────────────────────────────────────────┤
+│ approved_from     │ date   │ YYYY-MM-DD                                                        │
+├───────────────────┼────────┼───────────────────────────────────────────────────────────────────┤
+│ approved_until    │ date   │ YYYY-MM-DD                                                        │
+└───────────────────┴────────┴───────────────────────────────────────────────────────────────────┘
+
+Returns: paginated list. Each item:
+
+{
+"id": 901,
+"flipped_course_slot_id": 12,
+"user_id": 5523,
+"status": "approved",
+"registered_at": "...",
+"approved_at": "...",
+"rejected_at": null,
+"approved_by": 2,
+"admin_notes": null,
+"student_notes": null,
+"user": {
+"id": 5523,
+"first_name": "...",
+"last_name": "...",
+"email": "...",
+"registration_number": "...",
+"photo": "..."
+},
+"flipped_course_slot": {
+"id": 12, "name": "...",
+"flipped_course": { "id": 4, "name": "DS-101", "course_id": 88 }
+},
+"approved_by": { "id": 2, "first_name": "...", "last_name": "..." }
+}
+
+Sorted by approved_at desc.
+
+---
+3.5 Get a Registration
+
+GET /faculty/registrations/{registration}
+
+Returns one registration with full user, flipped_course_slot.flipped_course, and approved_by relations. 404 if it doesn't belong to a slot owned by the authenticated faculty.
+
+---
+4. Authorization model (so the frontend doesn't get surprised)
+
+- The middleware enforces role (faculty exists). Per-resource authorization is enforced inside each controller by scoping every query to flipped_course_faculty_id = auth_faculty.id.
+- Asking for a slot/registration that exists but belongs to another faculty → 404 Resource not found (intentionally, not 403, to avoid leaking IDs).
+- Faculty cannot approve/reject/create anything via this API yet — these endpoints are read-only in this slice (matches the current Filament UI). Slot creation and registration approval
+remain admin-side.
+
+---
+5. Quick smoke-test cURL
+
+TOKEN="..."
+BASE="https://your-host/api/v1"
+
+curl -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" \
+"$BASE/faculty/slots?is_active=true&per_page=20"
+
+curl -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" \
+"$BASE/faculty/slots/12"
+
+curl -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" \
+"$BASE/faculty/slots/12/registrations?status=approved&search=ravi"
+
+---
+6. Not yet available (roadmap)
+
+These exist in the Filament panel and will land in subsequent slices — let the frontend plan for them but don't build against them yet:
+
+- Faculty dashboard stats (/faculty/dashboard/stats)
+- Quizzes & quiz attempts / grading
+- Project submissions, worksheet submissions
+- Course resources (faculty-side)
+- Student Q&A replies
+- Per-student progress view
