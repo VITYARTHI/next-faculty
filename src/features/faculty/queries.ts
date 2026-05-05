@@ -28,6 +28,8 @@ export const facultyKeys = {
     [...facultyKeys.registrations(), "list", params] as const,
   registration: (id: number) =>
     [...facultyKeys.registrations(), "detail", id] as const,
+  registrationProgress: (id: number) =>
+    [...facultyKeys.registration(id), "progress"] as const,
 };
 
 export function useFacultyStats() {
@@ -81,6 +83,14 @@ export function useRegistration(registrationId: number) {
   return useQuery({
     queryKey: facultyKeys.registration(registrationId),
     queryFn: () => facultyApi.getRegistration(registrationId),
+    enabled: Number.isFinite(registrationId) && registrationId > 0,
+  });
+}
+
+export function useRegistrationProgress(registrationId: number) {
+  return useQuery({
+    queryKey: facultyKeys.registrationProgress(registrationId),
+    queryFn: () => facultyApi.getRegistrationProgress(registrationId),
     enabled: Number.isFinite(registrationId) && registrationId > 0,
   });
 }

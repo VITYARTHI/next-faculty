@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Search,
   ArrowUpRight,
+  BarChart3,
   Check,
   X,
   CheckCircle2,
@@ -406,6 +407,14 @@ export function RegistrationsTable({ slotId, embedded }: RegistrationsTableProps
                         >
                           <X className="size-4" />
                           <span className="sr-only">Reject</span>
+                        </Button>
+                      )}
+                      {reg.status === "approved" && (
+                        <Button asChild variant="ghost" size="sm" title="View progress">
+                          <Link href={`/registrations/${reg.id}/progress`}>
+                            <BarChart3 className="size-4" />
+                            <span className="sr-only">Progress</span>
+                          </Link>
                         </Button>
                       )}
                       <Button asChild variant="ghost" size="sm">

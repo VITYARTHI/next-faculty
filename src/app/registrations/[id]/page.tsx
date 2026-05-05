@@ -4,6 +4,7 @@ import { use, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  BarChart3,
   Check,
   Hash,
   Loader2,
@@ -47,6 +48,14 @@ export default function RegistrationDetailPage({
               <ArrowLeft className="size-4" /> All registrations
             </Link>
           </Button>
+          {isApproved && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/registrations/${registrationId}/progress`}>
+                <BarChart3 className="size-4" />
+                Progress
+              </Link>
+            </Button>
+          )}
           {canApprove && (
             <Button size="sm" onClick={() => setAction("approve")}>
               <Check className="size-4" />

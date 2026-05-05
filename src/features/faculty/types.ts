@@ -99,6 +99,73 @@ export interface FacultyStats {
   slots: FacultyStatsSlot[];
 }
 
+// ---- Student progress ----------------------------------------------------
+
+export type LessonStatus = "completed" | "in_progress" | "not_started";
+
+export interface ProgressLesson {
+  lesson_id: number;
+  title: string;
+  duration: string; // "HH:MM:SS"
+  sort: number;
+  status: LessonStatus;
+  is_completed: boolean;
+  time_spent: number; // seconds
+  time_spent_formatted: string;
+  current_position: number;
+  current_position_formatted: string;
+  last_accessed: string | null;
+  last_accessed_formatted: string | null;
+  watched_segments_count: number;
+  progress_percentage: number;
+}
+
+export interface ProgressSection {
+  section_id: number;
+  section_title: string;
+  section_sort: number;
+  total_lessons: number;
+  completed_lessons: number;
+  completion_percentage: number;
+  total_time_spent: number;
+  total_time_spent_formatted: string;
+  lessons: ProgressLesson[];
+}
+
+export interface ProgressSummary {
+  total_sections: number;
+  total_lessons: number;
+  completed_lessons: number;
+  in_progress_lessons: number;
+  not_started_lessons: number;
+  total_time_spent: number;
+  total_time_spent_formatted: string;
+  completion_percentage: number;
+  average_time_per_lesson: number;
+  last_activity: string | null;
+}
+
+export interface StudentProgress {
+  registration: {
+    id: number;
+    status: RegistrationStatus;
+    registered_at: string;
+    approved_at: string | null;
+  };
+  student: {
+    id: number;
+    name: string;
+    email: string;
+    registration_number: string | null;
+    photo: string | null;
+  };
+  slot: { id: number; name: string };
+  course: FlippedCourse;
+  summary: ProgressSummary;
+  sections: ProgressSection[];
+  lessons: ProgressLesson[];
+}
+
 // ---- Mutations -----------------------------------------------------------
 
 export type BulkSkipReason =

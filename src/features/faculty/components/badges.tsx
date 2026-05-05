@@ -1,5 +1,9 @@
 import { cn } from "@/lib/utils";
-import type { RegistrationStatus, SlotCapacityStatus } from "../types";
+import type {
+  LessonStatus,
+  RegistrationStatus,
+  SlotCapacityStatus,
+} from "../types";
 
 type Tone = "emerald" | "amber" | "rose" | "zinc" | "indigo";
 
@@ -74,6 +78,57 @@ export function ActiveBadge({ active }: { active: boolean }) {
       />
       {active ? "Active" : "Inactive"}
     </Pill>
+  );
+}
+
+const lessonTone: Record<LessonStatus, Tone> = {
+  completed: "emerald",
+  in_progress: "amber",
+  not_started: "zinc",
+};
+
+const lessonLabel: Record<LessonStatus, string> = {
+  completed: "Completed",
+  in_progress: "In progress",
+  not_started: "Not started",
+};
+
+export function LessonStatusBadge({ status }: { status: LessonStatus }) {
+  return (
+    <Pill tone={lessonTone[status]} className="capitalize">
+      {lessonLabel[status]}
+    </Pill>
+  );
+}
+
+export function ProgressBar({
+  value,
+  className,
+}: {
+  /** 0-100 */
+  value: number;
+  className?: string;
+}) {
+  const pct = Math.max(0, Math.min(100, value));
+  return (
+    <div
+      className={cn(
+        "h-1.5 w-full overflow-hidden rounded-full bg-muted",
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          "h-full transition-all",
+          pct === 100
+            ? "bg-emerald-500"
+            : pct > 0
+              ? "bg-amber-500"
+              : "bg-muted-foreground/30",
+        )}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
   );
 }
 

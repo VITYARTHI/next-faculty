@@ -18,6 +18,7 @@ import type {
   Registration,
   Slot,
   SlotDetail,
+  StudentProgress,
 } from "./types";
 
 export const facultyApi = {
@@ -53,6 +54,13 @@ export const facultyApi = {
   getRegistration: (registrationId: number) =>
     api
       .get<ApiEnvelope<Registration>>(`/faculty/registrations/${registrationId}`)
+      .then(unwrap),
+
+  getRegistrationProgress: (registrationId: number) =>
+    api
+      .get<ApiEnvelope<StudentProgress>>(
+        `/faculty/registrations/${registrationId}/progress`,
+      )
       .then(unwrap),
 
   approveRegistration: (id: number, body: ApproveBody = {}) =>
