@@ -13,6 +13,7 @@ import {
   Settings,
   LogOut,
   GraduationCap,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -48,6 +49,7 @@ const navGroups: {
       },
       { href: "/quizzes", label: "Quizzes", icon: ListChecks },
       { href: "/qna", label: "Questions", icon: MessagesSquare },
+      { href: "/certificates", label: "Certificates", icon: Award },
     ],
   },
   {
