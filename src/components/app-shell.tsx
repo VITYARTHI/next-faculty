@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   CalendarRange,
   ClipboardList,
+  MessagesSquare,
   Settings,
   LogOut,
   GraduationCap,
@@ -27,6 +28,7 @@ const nav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/slots", label: "Slots", icon: CalendarRange },
   { href: "/registrations", label: "Registrations", icon: ClipboardList },
+  { href: "/qna", label: "Questions", icon: MessagesSquare },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
