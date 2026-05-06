@@ -14,8 +14,8 @@ export function PageShell({ title, description, actions, children }: PageShellPr
   return (
     <AuthGuard>
       <AppShell>
-        <div className="space-y-6 p-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex flex-col gap-2 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
               {description && (
@@ -24,8 +24,8 @@ export function PageShell({ title, description, actions, children }: PageShellPr
             </div>
             {actions && <div className="flex items-center gap-2">{actions}</div>}
           </div>
-          {children}
-        </div>
+        </header>
+        <div className="space-y-6 p-6">{children}</div>
       </AppShell>
     </AuthGuard>
   );
