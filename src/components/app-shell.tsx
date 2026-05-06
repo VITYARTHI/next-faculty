@@ -7,6 +7,7 @@ import {
   CalendarRange,
   ClipboardList,
   FolderKanban,
+  ListChecks,
   MessagesSquare,
   Settings,
   LogOut,
@@ -30,6 +31,7 @@ const nav = [
   { href: "/slots", label: "Slots", icon: CalendarRange },
   { href: "/registrations", label: "Registrations", icon: ClipboardList },
   { href: "/project-submissions", label: "Project Submissions", icon: FolderKanban },
+  { href: "/quizzes", label: "Quizzes", icon: ListChecks },
   { href: "/qna", label: "Questions", icon: MessagesSquare },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
