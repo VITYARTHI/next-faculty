@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  FileText,
   Loader2,
   Pencil,
   Plus,
@@ -344,9 +345,9 @@ export function ResourcesTable() {
                     />
                   </TableCell>
                   <TableCell className="max-w-[320px]">
-                    {r.file_url ? (
+                    {(r.download_url ?? r.file_url) ? (
                       <a
-                        href={r.file_url}
+                        href={(r.download_url ?? r.file_url) as string}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 truncate font-medium underline-offset-4 hover:underline"
@@ -372,7 +373,8 @@ export function ResourcesTable() {
                     </div>
                   </TableCell>
                   <TableCell className="text-sm uppercase text-muted-foreground tabular-nums">
-                    {r.file_extension ?? (r.file_url ? "url" : "—")}
+                    {r.file_extension ??
+                      (r.file_url || r.download_url ? "url" : "—")}
                   </TableCell>
                   <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
                     {r.file_size_formatted ?? "—"}
@@ -382,6 +384,22 @@ export function ResourcesTable() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
+                      {(r.download_url ?? r.file_url) && (
+                        <Button asChild size="sm" variant="ghost" title="View">
+                          <a
+                            href={(r.download_url ?? r.file_url) as string}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {r.file_path ? (
+                              <FileText className="size-4" />
+                            ) : (
+                              <ExternalLink className="size-4" />
+                            )}
+                            <span className="sr-only">View</span>
+                          </a>
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="ghost"
@@ -411,10 +429,10 @@ export function ResourcesTable() {
                           >
                             <Pencil className="size-4" /> Edit
                           </DropdownMenuItem>
-                          {r.file_url && (
+                          {(r.download_url ?? r.file_url) && (
                             <DropdownMenuItem asChild>
                               <a
-                                href={r.file_url}
+                                href={(r.download_url ?? r.file_url) as string}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >

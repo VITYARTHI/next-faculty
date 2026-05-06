@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Upload } from "lucide-react";
+import { ExternalLink, FileText, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -213,17 +213,37 @@ export function ResourceFormDialog({ open, onOpenChange, resource }: Props) {
               <div className="space-y-2">
                 {isEdit && resource?.file_path && !file && (
                   <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 p-3 text-sm">
-                    <div className="min-w-0">
-                      <div className="truncate font-medium">
-                        {resource.file_path.split("/").pop() ?? "Current file"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {resource.file_size_formatted ?? ""}{" "}
-                        {resource.file_extension && (
-                          <span className="uppercase">
-                            · {resource.file_extension}
-                          </span>
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <FileText className="size-4 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        {(resource.download_url ?? resource.file_url) ? (
+                          <a
+                            href={
+                              (resource.download_url ??
+                                resource.file_url) as string
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block truncate font-medium underline-offset-4 hover:underline"
+                          >
+                            {resource.file_path.split("/").pop() ??
+                              "Current file"}
+                          </a>
+                        ) : (
+                          <div className="truncate font-medium">
+                            {resource.file_path.split("/").pop() ??
+                              "Current file"}
+                          </div>
                         )}
+                        <div className="text-xs text-muted-foreground">
+                          {resource.file_size_formatted ?? ""}
+                          {resource.file_extension && (
+                            <span className="uppercase">
+                              {resource.file_size_formatted ? " · " : ""}
+                              {resource.file_extension}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -274,6 +294,21 @@ export function ResourceFormDialog({ open, onOpenChange, resource }: Props) {
               </div>
             ) : (
               <div className="space-y-2">
+                {isEdit &&
+                  !resource?.file_path &&
+                  (resource?.download_url ?? resource?.file_url) && (
+                    <a
+                      href={
+                        (resource?.download_url ?? resource?.file_url) as string
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 break-all text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                    >
+                      <ExternalLink className="size-3.5 shrink-0" />
+                      {resource?.download_url ?? resource?.file_url}
+                    </a>
+                  )}
                 <Input
                   id="file_url"
                   type="url"

@@ -11,6 +11,7 @@ export interface Resource {
   title: string;
   description: string | null;
   file_url: string | null;
+  download_url: string | null;
   file_path: string | null;
   file_type: string | null;
   file_size: number | null;

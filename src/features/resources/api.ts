@@ -31,6 +31,13 @@ function buildFormData(
   return fd;
 }
 
+// The axios instance defaults to JSON Content-Type, which suppresses axios's
+// FormData auto-detection. Setting it to undefined lets the browser fill in
+// `multipart/form-data; boundary=…` correctly.
+const MULTIPART_CONFIG = {
+  headers: { "Content-Type": undefined as unknown as string },
+};
+
 export const resourcesApi = {
   list: (params: ListResourcesParams = {}) =>
     api
@@ -42,7 +49,11 @@ export const resourcesApi = {
 
   create: (input: CreateResourceInput) =>
     api
-      .post<ApiEnvelope<Resource>>("/faculty/resources", buildFormData(input))
+      .post<ApiEnvelope<Resource>>(
+        "/faculty/resources",
+        buildFormData(input),
+        MULTIPART_CONFIG,
+      )
       .then(unwrap),
 
   update: (id: number, input: UpdateResourceInput) => {
@@ -51,7 +62,11 @@ export const resourcesApi = {
     const fd = buildFormData(input);
     fd.append("_method", "PATCH");
     return api
-      .post<ApiEnvelope<Resource>>(`/faculty/resources/${id}`, fd)
+      .post<ApiEnvelope<Resource>>(
+        `/faculty/resources/${id}`,
+        fd,
+        MULTIPART_CONFIG,
+      )
       .then(unwrap);
   },
 
