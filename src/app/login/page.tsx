@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,9 +18,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Turnstile } from "@/components/turnstile";
 import { getErrorMessage, authToken } from "@/lib/api";
 import { loginSchema, type LoginInput } from "@/features/auth/schema";
 import { isFaculty, useLogin } from "@/features/auth/queries";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 export default function LoginPage() {
   return (
@@ -60,13 +63,22 @@ function LoginForm() {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", turnstile_token: "" },
   });
+  const turnstileToken = watch("turnstile_token");
+  const [turnstileNonce, setTurnstileNonce] = useState(0);
 
   const login = useLogin();
+
+  const resetTurnstile = () => {
+    setValue("turnstile_token", "", { shouldValidate: false });
+    setTurnstileNonce((n) => n + 1);
+  };
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -74,12 +86,14 @@ function LoginForm() {
       if (!isFaculty(user)) {
         authToken.clear();
         toast.error("This account is not linked to a faculty record.");
+        resetTurnstile();
         return;
       }
       toast.success(`Welcome, ${user.name ?? ""}`.trim());
       router.replace(redirectTo);
     } catch (err) {
       toast.error(getErrorMessage(err, "Login failed"));
+      resetTurnstile();
     }
   });
 
@@ -215,10 +229,44 @@ function LoginForm() {
               )}
             </div>
 
+            {TURNSTILE_SITE_KEY ? (
+              <div className="space-y-2">
+                <Turnstile
+                  key={turnstileNonce}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onToken={(token) =>
+                    setValue("turnstile_token", token, {
+                      shouldValidate: true,
+                    })
+                  }
+                  onExpire={() =>
+                    setValue("turnstile_token", "", { shouldValidate: false })
+                  }
+                  onError={() =>
+                    setValue("turnstile_token", "", { shouldValidate: false })
+                  }
+                />
+                {errors.turnstile_token && (
+                  <p className="text-sm text-destructive">
+                    {errors.turnstile_token.message}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400">
+                Turnstile site key is not configured. Set{" "}
+                <code className="font-mono">NEXT_PUBLIC_TURNSTILE_SITE_KEY</code>{" "}
+                in your environment.
+              </p>
+            )}
+
             <Button
               type="submit"
               className="h-10 w-full"
-              disabled={login.isPending}
+              disabled={
+                login.isPending ||
+                (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)
+              }
             >
               {login.isPending && <Loader2 className="size-4 animate-spin" />}
               Sign in
