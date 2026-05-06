@@ -248,7 +248,7 @@ export function SubmissionsTable() {
                     asChild
                     variant="ghost"
                     size="sm"
-                    className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+                    className=""
                   >
                     <Link href={`/project-submissions/${s.id}`}>
                       Open <ArrowUpRight className="size-4" />

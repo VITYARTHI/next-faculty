@@ -7,10 +7,14 @@ import {
   ArrowUpRight,
   BarChart3,
   Check,
+  Download,
+  Loader2,
   X,
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import { toast } from "sonner";
+import { facultyApi } from "../api";
 import {
   Table,
   TableBody,
@@ -63,6 +67,8 @@ const STATUSES: RegistrationStatus[] = [
   "rejected",
   "cancelled",
 ];
+
+type ExportStatus = RegistrationStatus | "all";
 
 // Bulk approve only works on `requested`. Bulk reject works on requested OR
 // approved (per spec, reject can also revoke an approval). Single-row inline
@@ -155,6 +161,39 @@ export function RegistrationsTable({ slotId, embedded }: RegistrationsTableProps
   const bulkApproveIds = selectedRows.filter((r) => canApprove(r.status)).map((r) => r.id);
   const bulkRejectIds = selectedRows.filter((r) => canReject(r.status)).map((r) => r.id);
 
+  // ---- Export -----------------------------------------------------------
+  const [exporting, setExporting] = useState<ExportStatus | null>(null);
+
+  const onExport = async (statusOverride: ExportStatus) => {
+    setExporting(statusOverride);
+    try {
+      const { blob, filename } = await facultyApi.exportRegistrations({
+        slot_id: slotId ?? filteredSlotId,
+        status:
+          statusOverride === "all"
+            ? "all"
+            : (statusOverride as RegistrationStatus),
+        search: debouncedSearch || undefined,
+        approved_from:
+          statusOverride === "approved" && approvedFrom ? approvedFrom : undefined,
+        approved_until:
+          statusOverride === "approved" && approvedUntil ? approvedUntil : undefined,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Export failed"));
+    } finally {
+      setExporting(null);
+    }
+  };
+
   // ---- Render ------------------------------------------------------------
   const colCount = embedded ? 5 : 6;
   const totalCols = colCount + 2; // selection + action
@@ -244,6 +283,36 @@ export function RegistrationsTable({ slotId, embedded }: RegistrationsTableProps
             />
           </div>
         )}
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onExport(status)}
+            disabled={exporting !== null}
+            title={`Export current view as CSV`}
+          >
+            {exporting === status ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            Export {status}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onExport("all")}
+            disabled={exporting !== null}
+            title="Export all statuses"
+          >
+            {exporting === "all" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            Export all
+          </Button>
+        </div>
       </div>
 
       {selected.size > 0 && (
@@ -382,7 +451,7 @@ export function RegistrationsTable({ slotId, embedded }: RegistrationsTableProps
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                    <div className="flex items-center justify-end gap-1">
                       {canApprove(reg.status) && (
                         <Button
                           size="sm"

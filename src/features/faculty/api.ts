@@ -94,4 +94,31 @@ export const facultyApi = {
         body,
       )
       .then(unwrap),
+
+  exportRegistrations: async (
+    params: Omit<ListRegistrationsParams, "status" | "page" | "per_page"> & {
+      status?: ListRegistrationsParams["status"] | "all";
+    },
+  ) => {
+    const res = await api.get("/faculty/registrations/export", {
+      params,
+      responseType: "blob",
+    });
+    const cd = res.headers["content-disposition"] as string | undefined;
+    const filename = parseFilename(cd) ?? "registrations.csv";
+    return { blob: res.data as Blob, filename };
+  },
 };
+
+function parseFilename(contentDisposition: string | undefined): string | null {
+  if (!contentDisposition) return null;
+  const match =
+    /filename\*=UTF-8''([^;]+)/i.exec(contentDisposition) ??
+    /filename="?([^";]+)"?/i.exec(contentDisposition);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
