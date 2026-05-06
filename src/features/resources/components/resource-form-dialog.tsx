@@ -141,8 +141,8 @@ export function ResourceFormDialog({ open, onOpenChange, resource }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-h-[90vh] gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>
             {isEdit ? "Edit resource" : "New resource"}
           </DialogTitle>
@@ -151,42 +151,48 @@ export function ResourceFormDialog({ open, onOpenChange, resource }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              aria-invalid={!!errors.title || undefined}
-            />
-            {errors.title && (
-              <p className="text-xs text-destructive">{errors.title}</p>
-            )}
-          </div>
+        <div className="space-y-5 overflow-y-auto px-6 py-5">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                aria-invalid={!!errors.title || undefined}
+              />
+              {errors.title && (
+                <p className="text-xs text-destructive">{errors.title}</p>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="slot">Slot</Label>
-            <Select value={slotId} onValueChange={setSlotId}>
-              <SelectTrigger id="slot" aria-invalid={!!errors.slot || undefined}>
-                <SelectValue placeholder="Choose slot…" />
-              </SelectTrigger>
-              <SelectContent>
-                {slots.data?.data.map((slot) => (
-                  <SelectItem key={slot.id} value={String(slot.id)}>
-                    <span className="font-medium">{slot.name}</span>
-                    {slot.flipped_course?.name && (
-                      <span className="ml-2 text-muted-foreground">
-                        · {slot.flipped_course.name}
-                      </span>
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.slot && (
-              <p className="text-xs text-destructive">{errors.slot}</p>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="slot">Slot</Label>
+              <Select value={slotId} onValueChange={setSlotId}>
+                <SelectTrigger
+                  id="slot"
+                  aria-invalid={!!errors.slot || undefined}
+                  className="w-full [&>span]:truncate"
+                >
+                  <SelectValue placeholder="Choose slot…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {slots.data?.data.map((slot) => (
+                    <SelectItem key={slot.id} value={String(slot.id)}>
+                      <span className="font-medium">{slot.name}</span>
+                      {slot.flipped_course?.name && (
+                        <span className="ml-2 text-muted-foreground">
+                          · {slot.flipped_course.name}
+                        </span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.slot && (
+                <p className="text-xs text-destructive">{errors.slot}</p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -258,11 +264,12 @@ export function ResourceFormDialog({ open, onOpenChange, resource }: Props) {
                 <label
                   htmlFor="file"
                   className={cn(
-                    "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed p-6 text-center text-sm transition-colors hover:bg-muted/40",
+                    "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border border-dashed text-center text-sm transition-colors hover:bg-muted/40",
+                    isEdit && resource?.file_path && !file ? "p-3" : "p-5",
                     errors.file && "border-destructive",
                   )}
                 >
-                  <Upload className="size-5 text-muted-foreground" />
+                  <Upload className="size-4 text-muted-foreground" />
                   {file ? (
                     <>
                       <span className="font-medium">{file.name}</span>
@@ -333,7 +340,7 @@ export function ResourceFormDialog({ open, onOpenChange, resource }: Props) {
           </label>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t px-6 py-4">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
