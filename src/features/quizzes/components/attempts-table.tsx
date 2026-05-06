@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Search } from "lucide-react";
+import { ArrowUpRight, Download, Loader2, Search } from "lucide-react";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ import { useDebouncedValue } from "@/lib/hooks";
 import { formatDateTime, nameInitials } from "@/lib/format";
 import { getErrorMessage } from "@/lib/api";
 import { useSlots } from "@/features/faculty/queries";
+import { quizzesApi } from "../api";
 import { useQuizAttempts } from "../queries";
 import type { AttemptSort, AttemptStatus } from "../types";
 import { AttemptStatusBadge, ViolationsPill } from "./badges";
@@ -74,6 +76,34 @@ export function AttemptsTable({ quizId }: { quizId: number }) {
   const onFilterChange = () => setPage(1);
   const rows = data?.data ?? [];
   const COLS = 8;
+
+  const [exporting, setExporting] = useState(false);
+  const onExport = async () => {
+    setExporting(true);
+    try {
+      const { blob, filename } = await quizzesApi.exportAttempts(quizId, {
+        status: statusFilter === "all" ? undefined : statusFilter,
+        slot_id: slotFilter === "all" ? undefined : Number(slotFilter),
+        has_violations:
+          violationsFilter === "all" ? undefined : violationsFilter === "true",
+        started_from: startedFrom || undefined,
+        started_until: startedUntil || undefined,
+        search: debouncedSearch || undefined,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Export failed"));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
@@ -184,6 +214,21 @@ export function AttemptsTable({ quizId }: { quizId: number }) {
             aria-label="Started until"
           />
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="ml-auto"
+          onClick={onExport}
+          disabled={exporting}
+          title="Export current view as CSV"
+        >
+          {exporting ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Download className="size-4" />
+          )}
+          Export CSV
+        </Button>
       </div>
 
       <Table>
@@ -277,7 +322,7 @@ export function AttemptsTable({ quizId }: { quizId: number }) {
                     asChild
                     variant="ghost"
                     size="sm"
-                    className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+                    className=""
                   >
                     <Link href={`/quizzes/${quizId}/attempts/${a.id}`}>
                       Open <ArrowUpRight className="size-4" />

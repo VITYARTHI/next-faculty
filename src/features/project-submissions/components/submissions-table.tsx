@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Search } from "lucide-react";
+import { ArrowUpRight, Download, Loader2, Search } from "lucide-react";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ import { useDebouncedValue } from "@/lib/hooks";
 import { formatDateTime, nameInitials } from "@/lib/format";
 import { getErrorMessage } from "@/lib/api";
 import { useSlots } from "@/features/faculty/queries";
+import { projectSubmissionsApi } from "../api";
 import { useSubmissionsList } from "../queries";
 import type {
   ProjectSubmissionStatus,
@@ -68,6 +70,32 @@ export function SubmissionsTable() {
   const onFilterChange = () => setPage(1);
   const rows = data?.data ?? [];
   const COLS = 6;
+
+  const [exporting, setExporting] = useState(false);
+  const onExport = async () => {
+    setExporting(true);
+    try {
+      const { blob, filename } = await projectSubmissionsApi.exportSubmissions({
+        status: statusFilter === "all" ? undefined : statusFilter,
+        slot_id: slotFilter === "all" ? undefined : Number(slotFilter),
+        search: debouncedSearch || undefined,
+        submitted_from: submittedFrom || undefined,
+        submitted_until: submittedUntil || undefined,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Export failed"));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
@@ -165,6 +193,21 @@ export function SubmissionsTable() {
             aria-label="Submitted until"
           />
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="ml-auto"
+          onClick={onExport}
+          disabled={exporting}
+          title="Export current view as CSV"
+        >
+          {exporting ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Download className="size-4" />
+          )}
+          Export CSV
+        </Button>
       </div>
 
       <Table>

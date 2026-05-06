@@ -39,4 +39,30 @@ export const quizzesApi = {
         `/faculty/quizzes/${quizId}/attempts/${attemptId}`,
       )
       .then(unwrap),
+
+  exportAttempts: async (
+    quizId: number,
+    params: Omit<ListAttemptsParams, "page" | "per_page" | "sort"> = {},
+  ) => {
+    const res = await api.get(
+      `/faculty/quizzes/${quizId}/attempts/export`,
+      { params, responseType: "blob" },
+    );
+    const cd = res.headers["content-disposition"] as string | undefined;
+    const filename = parseFilename(cd) ?? "quiz_results.csv";
+    return { blob: res.data as Blob, filename };
+  },
 };
+
+function parseFilename(contentDisposition: string | undefined): string | null {
+  if (!contentDisposition) return null;
+  const match =
+    /filename\*=UTF-8''([^;]+)/i.exec(contentDisposition) ??
+    /filename="?([^";]+)"?/i.exec(contentDisposition);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}

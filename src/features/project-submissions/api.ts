@@ -44,4 +44,29 @@ export const projectSubmissionsApi = {
         body,
       )
       .then(unwrap),
+
+  exportSubmissions: async (
+    params: Omit<ListSubmissionsParams, "page" | "per_page" | "sort"> = {},
+  ) => {
+    const res = await api.get("/faculty/project-submissions/export", {
+      params,
+      responseType: "blob",
+    });
+    const cd = res.headers["content-disposition"] as string | undefined;
+    const filename = parseFilename(cd) ?? "project_submissions.csv";
+    return { blob: res.data as Blob, filename };
+  },
 };
+
+function parseFilename(contentDisposition: string | undefined): string | null {
+  if (!contentDisposition) return null;
+  const match =
+    /filename\*=UTF-8''([^;]+)/i.exec(contentDisposition) ??
+    /filename="?([^";]+)"?/i.exec(contentDisposition);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
