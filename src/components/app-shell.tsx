@@ -29,7 +29,7 @@ const nav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/slots", label: "Slots", icon: CalendarRange },
   { href: "/registrations", label: "Registrations", icon: ClipboardList },
-  { href: "/project-submissions", label: "Submissions", icon: FolderKanban },
+  { href: "/project-submissions", label: "Project Submissions", icon: FolderKanban },
   { href: "/qna", label: "Questions", icon: MessagesSquare },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

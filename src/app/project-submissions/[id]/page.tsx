@@ -14,12 +14,10 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/page-shell";
 import { useSubmission } from "@/features/project-submissions/queries";
-import { projectSubmissionsApi, type DownloadKind } from "@/features/project-submissions/api";
 import { SubmissionStatusBadge } from "@/features/project-submissions/components/badges";
 import {
   GradeDialog,
@@ -27,6 +25,12 @@ import {
 } from "@/features/project-submissions/components/grade-dialog";
 import { formatDateTime, nameInitials } from "@/lib/format";
 import { getErrorMessage } from "@/lib/api";
+
+type DownloadKind = "readme" | "report";
+
+function downloadHref(submissionId: number, kind: DownloadKind): string {
+  return `/api/v1/faculty/project-submissions/${submissionId}/download-${kind}`;
+}
 
 export default function SubmissionDetailPage({
   params,
@@ -37,33 +41,10 @@ export default function SubmissionDetailPage({
   const submissionId = Number(id);
   const { data, isLoading, isError, error } = useSubmission(submissionId);
   const [dialog, setDialog] = useState<GradeMode | null>(null);
-  const [downloading, setDownloading] = useState<DownloadKind | null>(null);
 
   const canGrade = data?.status === "submitted" || data?.status === "graded";
   const canReject = data?.status === "submitted";
   const isGraded = data?.status === "graded";
-
-  const onDownload = async (kind: DownloadKind) => {
-    setDownloading(kind);
-    try {
-      const { blob, filename } = await projectSubmissionsApi.download(
-        submissionId,
-        kind,
-      );
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      toast.error(getErrorMessage(err, "Download failed"));
-    } finally {
-      setDownloading(null);
-    }
-  };
 
   return (
     <PageShell
@@ -109,24 +90,26 @@ export default function SubmissionDetailPage({
             <div className="overflow-hidden rounded-xl border bg-card">
               <div className="flex flex-col gap-4 border-b p-6 sm:flex-row sm:items-start">
                 <Avatar className="size-12">
-                  {data.user.photo && <AvatarImage src={data.user.photo} alt="" />}
+                  {data.user?.photo && <AvatarImage src={data.user.photo} alt="" />}
                   <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary">
-                    {nameInitials(data.user.name)}
+                    {nameInitials(data.user?.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-semibold tracking-tight">
-                      {data.user.name || "—"}
+                      {data.user?.name || "—"}
                     </h2>
                     <SubmissionStatusBadge status={data.status} />
                   </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Mail className="size-3.5" />
-                      {data.user.email}
-                    </span>
-                    {data.user.registration_number && (
+                    {data.user?.email && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Mail className="size-3.5" />
+                        {data.user.email}
+                      </span>
+                    )}
+                    {data.user?.registration_number && (
                       <span className="inline-flex items-center gap-1.5">
                         <Hash className="size-3.5" />
                         {data.user.registration_number}
@@ -139,9 +122,6 @@ export default function SubmissionDetailPage({
               <dl className="grid gap-x-6 gap-y-5 p-6 sm:grid-cols-2">
                 <Field label="Project">
                   {data.course_project?.title ?? "—"}
-                </Field>
-                <Field label="Course">
-                  {data.course_project?.course?.name ?? "—"}
                 </Field>
                 <Field label="Submitted">
                   {formatDateTime(data.submitted_at)}
@@ -219,14 +199,12 @@ export default function SubmissionDetailPage({
                 <FileRow
                   label="README"
                   available={data.files.has_readme}
-                  loading={downloading === "readme"}
-                  onDownload={() => onDownload("readme")}
+                  href={downloadHref(data.id, "readme")}
                 />
                 <FileRow
                   label="Report"
                   available={data.files.has_report}
-                  loading={downloading === "report"}
-                  onDownload={() => onDownload("report")}
+                  href={downloadHref(data.id, "report")}
                 />
               </div>
             </div>
@@ -288,13 +266,11 @@ function Section({
 function FileRow({
   label,
   available,
-  loading,
-  onDownload,
+  href,
 }: {
   label: string;
   available: boolean;
-  loading: boolean;
-  onDownload: () => void;
+  href: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-md border p-3">
@@ -307,19 +283,19 @@ function FileRow({
           </div>
         </div>
       </div>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={!available || loading}
-        onClick={onDownload}
-      >
-        {loading ? (
-          <Loader2 className="size-4 animate-spin" />
-        ) : (
+      {available ? (
+        <Button asChild size="sm" variant="outline">
+          <a href={href} download>
+            <Download className="size-4" />
+            Download
+          </a>
+        </Button>
+      ) : (
+        <Button size="sm" variant="outline" disabled>
           <Download className="size-4" />
-        )}
-        Download
-      </Button>
+          Download
+        </Button>
+      )}
     </div>
   );
 }

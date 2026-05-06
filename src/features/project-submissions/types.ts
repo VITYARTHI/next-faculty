@@ -33,8 +33,10 @@ export interface ProjectSubmission {
   feedback: string | null;
   submitted_at: string | null;
   graded_at: string | null;
-  user: ProjectSubmissionUser;
-  course_project: CourseProject;
+  // The detail endpoint may omit relations the list eager-loads; render
+  // defensively at call sites.
+  user?: ProjectSubmissionUser;
+  course_project?: CourseProject;
 }
 
 export interface ProjectSubmissionFiles {

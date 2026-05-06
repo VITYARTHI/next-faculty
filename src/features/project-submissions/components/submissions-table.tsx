@@ -67,7 +67,7 @@ export function SubmissionsTable() {
 
   const onFilterChange = () => setPage(1);
   const rows = data?.data ?? [];
-  const COLS = 7;
+  const COLS = 6;
 
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
@@ -172,7 +172,6 @@ export function SubmissionsTable() {
           <TableRow className="hover:bg-transparent">
             <TableHead>Student</TableHead>
             <TableHead>Project</TableHead>
-            <TableHead>Course</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Score</TableHead>
             <TableHead>Submitted</TableHead>
@@ -208,17 +207,17 @@ export function SubmissionsTable() {
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="size-8">
-                      {s.user.photo && <AvatarImage src={s.user.photo} alt="" />}
+                      {s.user?.photo && <AvatarImage src={s.user.photo} alt="" />}
                       <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-                        {nameInitials(s.user.name)}
+                        {nameInitials(s.user?.name)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">
-                        {s.user.name || "—"}
+                        {s.user?.name || "—"}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">
-                        {s.user.registration_number ?? s.user.email}
+                        {s.user?.registration_number ?? s.user?.email ?? ""}
                       </div>
                     </div>
                   </div>
@@ -230,11 +229,6 @@ export function SubmissionsTable() {
                   >
                     {s.course_project?.title ?? "—"}
                   </Link>
-                </TableCell>
-                <TableCell className="max-w-[200px]">
-                  <div className="truncate text-sm text-muted-foreground">
-                    {s.course_project?.course?.name ?? "—"}
-                  </div>
                 </TableCell>
                 <TableCell>
                   <SubmissionStatusBadge status={s.status} />
