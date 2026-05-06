@@ -27,6 +27,7 @@ import { formatDate } from "@/lib/format";
 import { getErrorMessage } from "@/lib/api";
 import { useSlots } from "../queries";
 import { ActiveBadge, UtilizationBar } from "./badges";
+import { ProgressReportButton } from "./progress-report-button";
 
 type ActiveFilter = "all" | "true" | "false";
 
@@ -161,16 +162,19 @@ export function SlotsTable() {
                   {formatDate(slot.registration_deadline)}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className="opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <Link href={`/slots/${slot.id}`}>
-                      View <ArrowUpRight className="size-4" />
-                    </Link>
-                  </Button>
+                  <div className="flex items-center justify-end gap-1">
+                    <ProgressReportButton
+                      slotId={slot.id}
+                      approvedCount={slot.approved_count}
+                      variant="ghost"
+                      compact
+                    />
+                    <Button asChild variant="ghost" size="sm">
+                      <Link href={`/slots/${slot.id}`}>
+                        View <ArrowUpRight className="size-4" />
+                      </Link>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))

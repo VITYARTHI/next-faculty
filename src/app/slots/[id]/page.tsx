@@ -21,6 +21,7 @@ import {
   UtilizationBar,
 } from "@/features/faculty/components/badges";
 import { RegistrationsTable } from "@/features/faculty/components/registrations-table";
+import { ProgressReportButton } from "@/features/faculty/components/progress-report-button";
 import { formatDate } from "@/lib/format";
 import { getErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -39,11 +40,19 @@ export default function SlotDetailPage({
       title={slot?.name ?? "Slot"}
       description={slot?.flipped_course?.name}
       actions={
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/slots">
-            <ArrowLeft className="size-4" /> All slots
-          </Link>
-        </Button>
+        <>
+          {slot && (
+            <ProgressReportButton
+              slotId={slot.id}
+              approvedCount={slot.approved_count}
+            />
+          )}
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/slots">
+              <ArrowLeft className="size-4" /> All slots
+            </Link>
+          </Button>
+        </>
       }
     >
       {isLoading ? (

@@ -95,6 +95,15 @@ export const facultyApi = {
       )
       .then(unwrap),
 
+  getSlotProgressReport: async (slotId: number) => {
+    const res = await api.get(`/faculty/slots/${slotId}/progress-report`, {
+      responseType: "blob",
+    });
+    const cd = res.headers["content-disposition"] as string | undefined;
+    const filename = parseFilename(cd) ?? `slot_${slotId}_progress.csv`;
+    return { blob: res.data as Blob, filename };
+  },
+
   exportRegistrations: async (
     params: Omit<ListRegistrationsParams, "status" | "page" | "per_page"> & {
       status?: ListRegistrationsParams["status"] | "all";
